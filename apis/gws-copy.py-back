@@ -1,0 +1,56 @@
+from flask import Blueprint, json, request
+from ..core.db import get_db
+from ..helpers import rowsToJSON
+
+
+# Defining a blueprint
+gws_bp = Blueprint(
+    'gws_bp', __name__,
+    template_folder='templates',
+    static_folder='static',
+    url_prefix='/gws'
+)
+
+
+db = get_db()
+
+
+@gws_bp.route('/hello')
+def gws_home():
+    return "Hello GWS!"
+
+
+@gws_bp.route('/suppliers', methods=['GET'])
+def gws_list():
+    return rowsToJSON(db, "SELECT * FROM hp_suppliers WHERE active = 1")
+
+
+@gws_bp.route('/cycle/<race_date>/<track_code>/<race_num>', methods=['GET'])
+def gws_cycles(race_date=None, track_code=None, race_num=0):
+    # result = db.execute(f'SELECT TOP 10 * FROM gws_tracks t JOIN gws_files f ON t.track_id = f.track_id\
+    #         WHERE file_type_id = 3\
+    #         AND race_date = ?\
+    #         AND track_code = ?\
+    #         AND race = ?\
+    #         ORDER BY cycle_id DESC', (race_date, track_code, race_num))
+    # rows = result.fetchall()
+    # arr = []
+    # for i, row in rows:
+    #     arr[i] = (f'{row.track_code}: \n {row.cycle_id} ${row.race_num:.2f}')
+
+    # return arr
+
+    sql = """SELECT TOP 10 * FROM gws_tracks t JOIN gws_files f ON t.track_id = f.track_id
+            WHERE file_type_id = 3
+            AND race_date = ?
+            AND track_code = ?
+            AND race = ?"""
+    cur = db.cursor()
+    cur.execute(sql, race_date, track_code, race_num)
+    r = [dict((cur.description[i][0], value)
+              for i, value in enumerate(row)) for row in cur.fetchall()]
+    cur.connection.close()
+    return r
+
+    # return sql
+    # return rowsToJSON(db, sql, [race_date, track_code, race_num])

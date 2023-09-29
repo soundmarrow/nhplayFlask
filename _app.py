@@ -4,7 +4,7 @@ app = Flask(__name__)
 
 @app.get('/')
 def hello_world():
-    import application.db as db
+    import core.db as db
     return 'Hello world!'
 
 
